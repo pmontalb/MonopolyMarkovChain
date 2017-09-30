@@ -3,16 +3,13 @@ from Utility.Logger import Logger, LogLevel
 
 
 class CardInput:
-    def __init__(self, card_id="UnknownCard", log_name="master", log_level=LogLevel.DEBUG):
+    def __init__(self, card_id="UnknownCard"):
         self.card_id = card_id
-        self.log_name = log_name
-        self.log_level = log_level
 
 
 class Card:
     def __init__(self, card_input):
         self.card_input = card_input
-        self._logger = Logger(card_input.log_name, card_input.log_level)
 
     def __repr__(self):
         return "Card({})".format(self.card_input.card_id)
@@ -41,7 +38,7 @@ class Deck:
         return "Deck({})".format(self.deck_input.deck_id)
 
     def push_back(self, deck_card):
-        self._logger("{}: Added {}".format(self, deck_card))
+        self._logger("{}: Added {}".format(self, deck_card), log_level=LogLevel.TEST)
         self.__cards.append(deck_card)
 
     def draw(self):

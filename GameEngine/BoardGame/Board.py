@@ -34,11 +34,10 @@ class BoardInput:
 class Board(metaclass=ABCMeta):
     def __init__(self, board_input):
         self.board_input = board_input
+        self._logger = Logger(board_input.log_name, board_input.log_level)
 
         self._table = []
         self._make_board()
-
-        self._logger = Logger(board_input.log_name, board_input.log_level)
 
     def __repr__(self):
         return "Board({} | {} x {})".format(self.board_input.board_id, self.board_input.n_rows, self.board_input.n_cols)
@@ -60,13 +59,16 @@ class Board(metaclass=ABCMeta):
         return self.n_rows, self.n_cols
 
     def __getitem__(self, coord):
-        assert len(coord) in [1, 2]
+        try:
+            assert len(coord) in [1, 2]
+        except TypeError:
+            coord = [coord]
+            pass
 
         if len(coord) == 1:
             return self._table[coord[0]]
 
-        ret = self._table[coord[0] + self.n_rows * coord[1]]
-
+        return self._table[coord[0] + self.n_rows * coord[1]]
 
     def __setitem__(self, coord, board_item):
         assert len(coord) in [1, 2]

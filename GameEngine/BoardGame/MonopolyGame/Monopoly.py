@@ -46,20 +46,15 @@ class MonopolyInput(BoardGameInput):
 
 
 class Monopoly(BoardGame):
-    def __init__(self, board_input):
-        super(Monopoly, self).__init__(board_input)
+    def __init__(self, game_input):
+        super(Monopoly, self).__init__(game_input)
 
     def make_board(self):
-        self.board = MonopolyBoard(self.game_input)
+        self.board = MonopolyBoard(self.game_input.board_input)
 
     def make_players(self):
-        if self.n_players > 1:
-            # read a config file for setting up money, properties, etc
-            raise NotImplementedError()
-
-        # 1 player is only for testing/non-game purposes
-        player_input = MonopolyPlayerInput(0, [None], "Player1")
-        self.players = [MonopolyPlayer(player_input)]
+        # read a config file for setting up money, properties, etc
+        raise NotImplementedError()
 
     def _game_over(self):
         # remove players who have defaulted

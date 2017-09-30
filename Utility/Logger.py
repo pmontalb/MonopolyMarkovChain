@@ -4,7 +4,8 @@ from datetime import datetime
 from os import getcwd
 
 DATA_FOLDER = getcwd() + "/Data/Logs"
-_LOG_HANDLES = []
+_LOG_HANDLES = {}
+_LOG_PATHS = []
 
 
 class LogLevel(IntEnum):
@@ -24,17 +25,18 @@ class Logger:
             self.log_path += ".log"
 
         self.log_level = log_level
-        if self.log_path not in _LOG_HANDLES:
-            _LOG_HANDLES.append(self.log_path)
+        if self.log_path not in _LOG_PATHS:
+            _LOG_PATHS.append(self.log_path)
             self.__log_handle = open(self.log_path, "w+")
+            _LOG_HANDLES[self.log_path] = self.__log_handle
         else:
-            self.__log_handle = open(self.log_path, "a")
+            self.__log_handle = _LOG_HANDLES[self.log_path]
 
     def set_log_level(self, log_level):
         self.log_level = log_level
 
     def __call__(self, message, log_level=LogLevel.DEBUG):
-        if log_level < self.log_level:
+        if log_level > self.log_level:
             return
         self.__log_handle.write(self.__message_prefix() + message + "\n")
 

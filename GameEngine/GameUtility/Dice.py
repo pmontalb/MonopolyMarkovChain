@@ -7,4 +7,4 @@ class Dice:
         self.max_value = max_value
 
     def launch(self):
-        return np.random.uniform(self.min_value, self.max_value)
+        return np.random.randint(self.min_value, self.max_value + 1)

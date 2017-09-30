@@ -30,8 +30,7 @@ class MonopolyCardInput(CardInput):
                  card_id="UnknownMonopolyCard", 
                  go_to=None, 
                  pos_shift=0, 
-                 capital_change=0,
-                 log_name="master", log_level=LogLevel.DEBUG):
+                 capital_change=0):
         super(MonopolyCardInput, self).__init__(card_id)
 
         self.go_to = go_to
@@ -56,6 +55,13 @@ class MonopolyCardInput(CardInput):
 class MonopolyCard(Card):
     def __init__(self, card_input):
         super(MonopolyCard, self).__init__(card_input)
+
+    def __repr__(self):
+        return "Card({} | go{} | ps{} | ${} | lp{})".format(self.card_input.card_id,
+                                                            self.go_to,
+                                                            self.pos_shift,
+                                                            self.capital_change,
+                                                            self.leave_prison)
 
     @property
     def go_to(self):
@@ -95,12 +101,24 @@ class MonopolyBoardItem(BoardItem):
     def __init__(self, board_item_input):
         super(MonopolyBoardItem, self).__init__(board_item_input)
         self.own_by = None
+
+    @property
+    def buy_cost(self):
+        return self.board_item_input.buy_cost
+
+    @property
+    def passage_cost(self):
+        return self.board_item_input.passage_cost
+
+    @property
+    def group(self):
+        return self.board_item_input.group
         
     def __repr__(self):
         return "BoardItem[{} | cost(b={} p={}) | {}]".format(self.board_item_input.item_id,
-                                                             self.board_item_input.buy_cost,
-                                                             self.board_item_input.passage_cost,
-                                                             self.board_item_input.group)
+                                                             self.buy_cost,
+                                                             self.passage_cost,
+                                                             self.group)
 
 
 class MonopolyBoardInput(BoardInput):
@@ -114,10 +132,10 @@ class MonopolyBoard(Board):
         super(MonopolyBoard, self).__init__(board_input)
         self.dice = Dice()
 
-        self.community_chest = Deck(DeckInput())
+        self.community_chest = Deck(DeckInput("Community Chest", board_input.log_name, board_input.log_level))
         self.__make_community_chest_deck()
 
-        self.chance = Deck(DeckInput())
+        self.chance = Deck(DeckInput("Chance", board_input.log_name, board_input.log_level))
         self.__make_chance_deck()
 
     @property
@@ -130,7 +148,7 @@ class MonopolyBoard(Board):
 
     def __append_board_item(self, board_item_input):
         item = MonopolyBoardItem(board_item_input)
-        self._logger("{}: \#{} Added {}".format(self, len(self._table), item))
+        self._logger("{}: #{} Added {}".format(self, len(self._table), item), log_level=LogLevel.TEST)
         self._table.append(item)
 
     def _make_board(self):
@@ -191,7 +209,22 @@ class MonopolyBoard(Board):
         self.__append_board_item(MonopolyBoardItemInput("Paris", 400, Group.Purple))  # 39
 
     def __make_community_chest_deck(self):
-        pass
+        self.community_chest.push_back(MonopolyCard(MonopolyCardInput("CC1", self.go_position, 0, 0)))
+        self.community_chest.push_back(MonopolyCard(MonopolyCardInput("CC2", None, 0, 200)))
+        self.community_chest.push_back(MonopolyCard(MonopolyCardInput("CC3", None, 0, -50)))
+        self.community_chest.push_back(MonopolyCard(MonopolyCardInput("CC4", None, 0, 50)))
+        self.community_chest.push_back(MonopolyCard(MonopolyCardInput("Leave Prison 1", None, 0, 0)))
+        self.community_chest.push_back(MonopolyCard(MonopolyCardInput("CC5", self.prison_position, 0, 0)))
+        self.community_chest.push_back(MonopolyCard(MonopolyCardInput("CC6", None, 0, 50)))  # TODO: 50 * n_players
+        self.community_chest.push_back(MonopolyCard(MonopolyCardInput("CC7", None, 0, 100)))
+        self.community_chest.push_back(MonopolyCard(MonopolyCardInput("CC8", None, 0, 20)))
+        self.community_chest.push_back(MonopolyCard(MonopolyCardInput("CC9", None, 0, 10)))  # TODO: 10 * n_players
+        self.community_chest.push_back(MonopolyCard(MonopolyCardInput("CC10", None, 0, 100)))
+        self.community_chest.push_back(MonopolyCard(MonopolyCardInput("CC11", None, 0, -150)))
+        self.community_chest.push_back(MonopolyCard(MonopolyCardInput("CC12", None, 0, 25)))
+        self.community_chest.push_back(MonopolyCard(MonopolyCardInput("CC13", None, 0, 40)))  # TODO: 40x houses, 115x hotels
+        self.community_chest.push_back(MonopolyCard(MonopolyCardInput("CC14", None, 0, 10)))
+        self.community_chest.push_back(MonopolyCard(MonopolyCardInput("CC15", None, 0, 100)))
 
     def __make_chance_deck(self):
         pass
@@ -213,6 +246,9 @@ class MonopolyBoard(Board):
         new_pos = player.position + first_launch + second_launch
 
         player.position = new_pos % self.n_rows  # table it's a ring buffer in this case
+        if new_pos > self.n_rows:
+            # collect 200
+            player.capital += 200
 
         if player.double_count == 3:
             self._logger("{} goes to prison".format(player))
@@ -220,7 +256,7 @@ class MonopolyBoard(Board):
             player.turns_in_prison = 0
             player.double_count = 0
         else:
-            self._logger("{} goes to".format(player, self[player.position]))
+            self._logger("{} goes to {}".format(player, self[player.position]))
             self.positional_trigger(player)
 
             if first_launch == second_launch:
@@ -236,13 +272,17 @@ class MonopolyBoard(Board):
             return
 
         if cell.group not in [Group.DrawChance, Group.DrawCommunityChest]:
-            # this is to be updated with all properties of the same group, houses and hotels
-            player.money -= cell.passage_cost
+            # deduct any passage cost (i.e. tax, property own by other players, etc.)
+            try:
+                # this is to be updated with all properties of the same group, houses and hotels
+                player.capital -= cell.passage_cost
+            except TypeError:
+                pass
 
             # if own by someone, give this money to the player who owns it
             try:
-                cell.own_by.money += cell.passage_cost
-            except ValueError:
+                cell.own_by.capital += cell.passage_cost
+            except (ValueError, AttributeError):
                 pass
             return
 
@@ -252,7 +292,7 @@ class MonopolyBoard(Board):
             return
 
         player.position = (player.position + card.pos_shift) % self.n_rows
-        player.money += card.capital_change
+        player.capital += card.capital_change
         player.leave_prison_tickets += card.leave_prison
 
 
