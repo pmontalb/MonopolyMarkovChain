@@ -1,14 +1,21 @@
 from random import shuffle
+from Utility.Logger import Logger, LogLevel
 
 
 class CardInput:
-    def __init__(self, card_id="UnknownCard"):
+    def __init__(self, card_id="UnknownCard", log_name="master", log_level=LogLevel.DEBUG):
         self.card_id = card_id
+        self.log_name = log_name
+        self.log_level = log_level
 
 
 class Card:
     def __init__(self, card_input):
         self.card_input = card_input
+        self._logger = Logger(card_input.log_name, card_input.log_level)
+
+    def __repr__(self):
+        return "Card({})".format(self.card_input.card_id)
 
 
 class DeckCard:
@@ -18,21 +25,29 @@ class DeckCard:
 
 
 class DeckInput:
-    def __init__(self):
-        pass
+    def __init__(self, deck_id="UnknownDeck", log_name="master", log_level=LogLevel.DEBUG):
+        self.deck_id = deck_id
+        self.log_name = log_name
+        self.log_level = log_level
 
 
 class Deck:
     def __init__(self, deck_input):
         self.deck_input = deck_input
+        self._logger = Logger(deck_input.log_name, deck_input.log_level)
         self.__cards = []
 
+    def __repr__(self):
+        return "Deck({})".format(self.deck_input.deck_id)
+
     def push_back(self, deck_card):
+        self._logger("{}: Added {}".format(self, deck_card))
         self.__cards.append(deck_card)
 
     def draw(self):
         # pop the first one
         ret = self.__cards.pop()
+        self._logger("{}: Drawn {}".format(self, ret))
 
         # put it back at the end of the deck
         self.__cards.append(ret)
@@ -40,4 +55,5 @@ class Deck:
         return ret
 
     def shuffle(self):
+        self._logger("{}: Shuffling".format(self))
         shuffle(self.__cards)

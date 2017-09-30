@@ -1,11 +1,16 @@
 from GameEngine.Game import Player, PlayerInput
 from GameEngine.BoardGame.BoardGame import BoardGame, BoardGameInput
 from GameEngine.BoardGame.MonopolyGame.MonopolyBoard import MonopolyBoard, MonopolyBoardInput
+from Utility.Logger import Logger, LogLevel
 
 
 class MonopolyPlayerInput(PlayerInput):
-    def __init__(self, initial_capital=None, initial_properties=None, player_id="UnknownPlayer"):
-        super(MonopolyPlayerInput, self).__init__(player_id)
+    def __init__(self,
+                 initial_capital=None,
+                 initial_properties=None,
+                 player_id="UnknownPlayer",
+                 log_name="master", log_level=LogLevel.DEBUG):
+        super(MonopolyPlayerInput, self).__init__(player_id, log_name, log_level)
         self.initial_capital = initial_capital
         self.initial_properties = initial_properties
 
@@ -22,10 +27,19 @@ class MonopolyPlayer(Player):
         self.turns_in_prison = 0
         self.leave_prison_tickets = 0
 
+    def __repr__(self):
+        return "Player({} | $({}) | #p({}) | pos({}) | dc({}) | tip({}) | lpt({})".format(self.player_input.player_id,
+                                                                                          self.capital,
+                                                                                          len(self.properties),
+                                                                                          self.position,
+                                                                                          self.double_count,
+                                                                                          self.turns_in_prison,
+                                                                                          self.leave_prison_tickets)
+
 
 class MonopolyInput(BoardGameInput):
-    def __init__(self, n_players):
-        super(MonopolyInput, self).__init__(n_players, "Monopoly")
+    def __init__(self, n_players, max_turns=100, log_name="master", log_level=LogLevel.DEBUG):
+        super(MonopolyInput, self).__init__(n_players, max_turns, "Monopoly", log_name, log_level)
 
     def make_board_input(self):
         self.board_input = MonopolyBoardInput()
@@ -40,23 +54,24 @@ class Monopoly(BoardGame):
 
     def make_players(self):
         if self.n_players > 1:
+            # read a config file for setting up money, properties, etc
             raise NotImplementedError()
 
         # 1 player is only for testing/non-game purposes
-        player_input = MonopolyPlayerInput(0, 0, "Player1")
+        player_input = MonopolyPlayerInput(0, [None], "Player1")
         self.players = [MonopolyPlayer(player_input)]
 
     def _game_over(self):
-        n_remaining = self.n_players
-        for player in self.players:
-            if player.capital <= 0:
-                n_remaining -= 1
+        # remove players who have defaulted
+        self.players = [p for p in self.players if p.capital > 0]
 
-        return n_remaining <= 2
+        # game is over if only two players are left
+        return len(self.players) <= 2
 
-    def play(self):
+    def _play(self):
         while not self.game_over():
             for player in self.players:
+                self._logger("{} is playing".format(player))
                 self.board.advance(player)
 
             # player can now decide to buy/sell/trade

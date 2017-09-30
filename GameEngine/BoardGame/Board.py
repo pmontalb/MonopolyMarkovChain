@@ -1,3 +1,4 @@
+from Utility.Logger import Logger, LogLevel
 from abc import abstractmethod, ABCMeta
 
 
@@ -10,9 +11,14 @@ class BoardItem:
     def __init__(self, board_item_input):
         self.board_item_input = board_item_input
 
+    def __repr__(self):
+        return "BoardItem({})".format(self.board_item_input.item_id)
+
 
 class BoardInput:
-    def __init__(self, n_rows, n_cols):
+    def __init__(self, board_id, n_rows, n_cols, log_name="master", log_level=LogLevel.DEBUG):
+        self.board_id = board_id
+
         if n_rows <= 0:
             raise ValueError("Number of board rows must be positive")
         self.n_rows = n_rows
@@ -21,6 +27,9 @@ class BoardInput:
             raise ValueError("Number of board rows must be positive")
         self.n_cols = n_cols
 
+        self.log_name = log_name
+        self.log_level = log_level
+
 
 class Board(metaclass=ABCMeta):
     def __init__(self, board_input):
@@ -28,6 +37,11 @@ class Board(metaclass=ABCMeta):
 
         self._table = []
         self._make_board()
+
+        self._logger = Logger(board_input.log_name, board_input.log_level)
+
+    def __repr__(self):
+        return "Board({} | {} x {})".format(self.board_input.board_id, self.board_input.n_rows, self.board_input.n_cols)
 
     @abstractmethod
     def _make_board(self):
@@ -51,7 +65,8 @@ class Board(metaclass=ABCMeta):
         if len(coord) == 1:
             return self._table[coord[0]]
 
-        return self._table[coord[0] + self.n_rows * coord[1]]
+        ret = self._table[coord[0] + self.n_rows * coord[1]]
+
 
     def __setitem__(self, coord, board_item):
         assert len(coord) in [1, 2]

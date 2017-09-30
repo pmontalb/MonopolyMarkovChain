@@ -1,10 +1,11 @@
 from GameEngine.Game import Game, GameInput
+from Utility.Logger import LogLevel
 from abc import ABCMeta, abstractmethod
 
 
 class BoardGameInput(GameInput, metaclass=ABCMeta):
-    def __init__(self, n_players, game_id):
-        super(BoardGameInput, self).__init__(game_id)
+    def __init__(self, n_players, max_turns, game_id, log_name="master", log_level=LogLevel.DEBUG):
+        super(BoardGameInput, self).__init__(max_turns, game_id, log_name, log_level)
 
         self.board_input = None
         self.make_board_input()

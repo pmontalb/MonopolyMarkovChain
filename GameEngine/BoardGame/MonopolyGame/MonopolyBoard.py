@@ -1,6 +1,7 @@
 from GameEngine.BoardGame.Board import BoardItem, BoardItemInput, Board, BoardInput
 from GameEngine.GameUtility.Dice import Dice
 from GameEngine.CardUtility.CardCollection import Deck, DeckInput, Card, CardInput
+from Utility.Logger import Logger, LogLevel
 from enum import Enum
 
 
@@ -25,7 +26,12 @@ class Group(Enum):
 
 
 class MonopolyCardInput(CardInput):
-    def __init__(self, card_id="UnknownMonopolyCard", go_to=None, pos_shift=0, capital_change=0):
+    def __init__(self, 
+                 card_id="UnknownMonopolyCard", 
+                 go_to=None, 
+                 pos_shift=0, 
+                 capital_change=0,
+                 log_name="master", log_level=LogLevel.DEBUG):
         super(MonopolyCardInput, self).__init__(card_id)
 
         self.go_to = go_to
@@ -69,7 +75,11 @@ class MonopolyCard(Card):
 
 
 class MonopolyBoardItemInput(BoardItemInput):
-    def __init__(self, name="UnknownName", buy_cost=None, group=None, passage_cost=None):
+    def __init__(self, 
+                 name="UnknownName",
+                 buy_cost=None, 
+                 group=None, 
+                 passage_cost=None):
         super(MonopolyBoardItemInput, self).__init__(name)
 
         self.buy_cost = buy_cost
@@ -84,12 +94,19 @@ class MonopolyBoardItemInput(BoardItemInput):
 class MonopolyBoardItem(BoardItem):
     def __init__(self, board_item_input):
         super(MonopolyBoardItem, self).__init__(board_item_input)
+        self.own_by = None
+        
+    def __repr__(self):
+        return "BoardItem[{} | cost(b={} p={}) | {}]".format(self.board_item_input.item_id,
+                                                             self.board_item_input.buy_cost,
+                                                             self.board_item_input.passage_cost,
+                                                             self.board_item_input.group)
 
 
 class MonopolyBoardInput(BoardInput):
-    def __init__(self):
+    def __init__(self, log_name="master", log_level=LogLevel.DEBUG):
         # the board is seen as a column vector of 40 cells
-        super(MonopolyBoardInput, self).__init__(40, 1)
+        super(MonopolyBoardInput, self).__init__("MonopolyBoard", 40, 1, log_name, log_level)
 
 
 class MonopolyBoard(Board):
@@ -111,67 +128,67 @@ class MonopolyBoard(Board):
     def prison_position(self):
         return 10
 
+    def __append_board_item(self, board_item_input):
+        item = MonopolyBoardItem(board_item_input)
+        self._logger("{}: \#{} Added {}".format(self, len(self._table), item))
+        self._table.append(item)
+
     def _make_board(self):
-        self._table.append(MonopolyBoardItem(MonopolyBoardItemInput("Go", None, Group.Go, -200)))  # 0
+        self.__append_board_item(MonopolyBoardItemInput("Go", None, Group.Go, -200)) # 0
 
-        self._table.append(MonopolyBoardItem(MonopolyBoardItemInput("Vilnius", 60, Group.Brown)))  # 1
-        self._table.append(
-            MonopolyBoardItem(MonopolyBoardItemInput("Community Chest", group=Group.DrawCommunityChest)))  # 2
-        self._table.append(MonopolyBoardItem(MonopolyBoardItemInput("Riga", 60, Group.Brown)))  # 3
+        self.__append_board_item(MonopolyBoardItemInput("Vilnius", 60, Group.Brown))  # 1
+        self.__append_board_item(MonopolyBoardItemInput("Community Chest", group=Group.DrawCommunityChest))  # 2
+        self.__append_board_item(MonopolyBoardItemInput("Riga", 60, Group.Brown))  # 3
 
-        self._table.append(MonopolyBoardItem(MonopolyBoardItemInput("Income Tax", None, Group.Tax, 200)))  # 4
-        self._table.append(MonopolyBoardItem(MonopolyBoardItemInput("Amsterdam Airport", 200, Group.Airport)))  # 5
+        self.__append_board_item(MonopolyBoardItemInput("Income Tax", None, Group.Tax, 200))  # 4
+        self.__append_board_item(MonopolyBoardItemInput("Amsterdam Airport", 200, Group.Airport))  # 5
 
-        self._table.append(MonopolyBoardItem(MonopolyBoardItemInput("Sofia", 100, Group.Blue)))  # 6
-        self._table.append(MonopolyBoardItem(MonopolyBoardItemInput("Chance", group=Group.DrawChance)))  # 7
-        self._table.append(MonopolyBoardItem(MonopolyBoardItemInput("Bucharest", 100, Group.Blue)))  # 8
-        self._table.append(MonopolyBoardItem(MonopolyBoardItemInput("Warsaw", 120, Group.Blue)))  # 9
+        self.__append_board_item(MonopolyBoardItemInput("Sofia", 100, Group.Blue))  # 6
+        self.__append_board_item(MonopolyBoardItemInput("Chance", group=Group.DrawChance))  # 7
+        self.__append_board_item(MonopolyBoardItemInput("Bucharest", 100, Group.Blue))  # 8
+        self.__append_board_item(MonopolyBoardItemInput("Warsaw", 120, Group.Blue))  # 9
 
-        self._table.append(MonopolyBoardItem(MonopolyBoardItemInput("Prison", group=Group.Prison)))  # 10
+        self.__append_board_item(MonopolyBoardItemInput("Prison", group=Group.Prison))  # 10
 
-        self._table.append(MonopolyBoardItem(MonopolyBoardItemInput("Budapest", 140, Group.Pink)))  # 11
-        self._table.append(
-            MonopolyBoardItem(MonopolyBoardItemInput("European Parliament", 150, Group.EuropeanBuilding)))  # 12
-        self._table.append(MonopolyBoardItem(MonopolyBoardItemInput("Ginevra", 140, Group.Pink)))  # 13
-        self._table.append(MonopolyBoardItem(MonopolyBoardItemInput("Helsinki", 160, Group.Pink)))  # 14
+        self.__append_board_item(MonopolyBoardItemInput("Budapest", 140, Group.Pink))  # 11
+        self.__append_board_item(MonopolyBoardItemInput("European Parliament", 150, Group.EuropeanBuilding))  # 12
+        self.__append_board_item(MonopolyBoardItemInput("Ginevra", 140, Group.Pink))  # 13
+        self.__append_board_item(MonopolyBoardItemInput("Helsinki", 160, Group.Pink))  # 14
 
-        self._table.append(MonopolyBoardItem(MonopolyBoardItemInput("Frankfurt Airport", 200, Group.Airport)))  # 15
+        self.__append_board_item(MonopolyBoardItemInput("Frankfurt Airport", 200, Group.Airport)) # 15
 
-        self._table.append(MonopolyBoardItem(MonopolyBoardItemInput("Stockholm", 180, Group.Orange)))  # 16
-        self._table.append(
-            MonopolyBoardItem(MonopolyBoardItemInput("Community Chest", group=Group.DrawCommunityChest)))  # 17
-        self._table.append(MonopolyBoardItem(MonopolyBoardItemInput("Vienna", 180, Group.Orange)))  # 18
-        self._table.append(MonopolyBoardItem(MonopolyBoardItemInput("Lisbon", 200, Group.Orange)))  # 19
+        self.__append_board_item(MonopolyBoardItemInput("Stockholm", 180, Group.Orange))  # 16
+        self.__append_board_item(MonopolyBoardItemInput("Community Chest", group=Group.DrawCommunityChest))  # 17
+        self.__append_board_item(MonopolyBoardItemInput("Vienna", 180, Group.Orange))  # 18
+        self.__append_board_item(MonopolyBoardItemInput("Lisbon", 200, Group.Orange)) # 19
 
-        self._table.append(MonopolyBoardItem(MonopolyBoardItemInput("Parking", group=Group.Parking)))  # 20
+        self.__append_board_item(MonopolyBoardItemInput("Parking", group=Group.Parking))  # 20
 
-        self._table.append(MonopolyBoardItem(MonopolyBoardItemInput("Madrid", 200, Group.Red)))  # 21
-        self._table.append(MonopolyBoardItem(MonopolyBoardItemInput("Chance", group=Group.DrawChance)))  # 22
-        self._table.append(MonopolyBoardItem(MonopolyBoardItemInput("Athene", 220, Group.Red)))  # 23
-        self._table.append(MonopolyBoardItem(MonopolyBoardItemInput("Dublin", 220, Group.Red)))  # 24
+        self.__append_board_item(MonopolyBoardItemInput("Madrid", 200, Group.Red))  # 21
+        self.__append_board_item(MonopolyBoardItemInput("Chance", group=Group.DrawChance))  # 22
+        self.__append_board_item(MonopolyBoardItemInput("Athene", 220, Group.Red))  # 23
+        self.__append_board_item(MonopolyBoardItemInput("Dublin", 220, Group.Red))  # 24
 
-        self._table.append(MonopolyBoardItem(MonopolyBoardItemInput("Paris Airport", 200, Group.Airport)))  # 25
+        self.__append_board_item(MonopolyBoardItemInput("Paris Airport", 200, Group.Airport))  # 25
 
-        self._table.append(MonopolyBoardItem(MonopolyBoardItemInput("Copenhagen", 240, Group.Yellow)))  # 26
-        self._table.append(MonopolyBoardItem(MonopolyBoardItemInput("London", 260, Group.Yellow)))  # 27
-        self._table.append(
-            MonopolyBoardItem(MonopolyBoardItemInput("Palace of Justice", 150, Group.EuropeanBuilding)))  # 28
-        self._table.append(MonopolyBoardItem(MonopolyBoardItemInput("Luxemburg", 280, Group.Yellow)))  # 29
+        self.__append_board_item(MonopolyBoardItemInput("Copenhagen", 240, Group.Yellow))  # 26
+        self.__append_board_item(MonopolyBoardItemInput("London", 260, Group.Yellow))  # 27
+        self.__append_board_item(MonopolyBoardItemInput("Palace of Justice", 150, Group.EuropeanBuilding))  # 28
+        self.__append_board_item(MonopolyBoardItemInput("Luxemburg", 280, Group.Yellow))  # 29
 
-        self._table.append(MonopolyBoardItem(MonopolyBoardItemInput("Go To Prison", group=Group.GoToPrison)))  # 30
+        self.__append_board_item(MonopolyBoardItemInput("Go To Prison", group=Group.GoToPrison))  # 30
 
-        self._table.append(MonopolyBoardItem(MonopolyBoardItemInput("Brussels", 300, Group.Green)))  # 31
-        self._table.append(MonopolyBoardItem(MonopolyBoardItemInput("Amsterdam", 300, Group.Green)))  # 32
-        self._table.append(
-            MonopolyBoardItem(MonopolyBoardItemInput("Community Chest", group=Group.DrawCommunityChest)))  # 33
-        self._table.append(MonopolyBoardItem(MonopolyBoardItemInput("Rome", 320, Group.Green)))  # 34
+        self.__append_board_item(MonopolyBoardItemInput("Brussels", 300, Group.Green))  # 31
+        self.__append_board_item(MonopolyBoardItemInput("Amsterdam", 300, Group.Green))  # 32
+        self.__append_board_item(MonopolyBoardItemInput("Community Chest", group=Group.DrawCommunityChest))  # 33
+        self.__append_board_item(MonopolyBoardItemInput("Rome", 320, Group.Green))  # 34
 
-        self._table.append(MonopolyBoardItem(MonopolyBoardItemInput("London Airport", 200, Group.Airport)))  # 35
-        self._table.append(MonopolyBoardItem(MonopolyBoardItemInput("Chance", group=Group.DrawChance)))  # 36
+        self.__append_board_item(MonopolyBoardItemInput("London Airport", 200, Group.Airport))  # 35
+        self.__append_board_item(MonopolyBoardItemInput("Chance", group=Group.DrawChance))  # 36
 
-        self._table.append(MonopolyBoardItem(MonopolyBoardItemInput("Berlin", 350, Group.Purple)))  # 37
-        self._table.append(MonopolyBoardItem(MonopolyBoardItemInput("Super Tax", None, Group.Tax, 100)))  # 38
-        self._table.append(MonopolyBoardItem(MonopolyBoardItemInput("Paris", 400, Group.Purple)))  # 39
+        self.__append_board_item(MonopolyBoardItemInput("Berlin", 350, Group.Purple))  # 37
+        self.__append_board_item(MonopolyBoardItemInput("Super Tax", None, Group.Tax, 100))  # 38
+        self.__append_board_item(MonopolyBoardItemInput("Paris", 400, Group.Purple))  # 39
 
     def __make_community_chest_deck(self):
         pass
@@ -182,28 +199,33 @@ class MonopolyBoard(Board):
     def advance(self, player):
         if player.position == self.prison_position:
             if player.turns_in_prison == 3:
+                self._logger("{} leaves prison".format(player))
                 player.turns_in_prison = 0
             else:
                 # if in prison, it cannot move for 3 turns
                 player.turns_in_prison += 1
+                self._logger("{} remains in prison".format(player))
                 return
 
         first_launch = self.dice.launch()
         second_launch = self.dice.launch()
+        self._logger("{} dice launch({} | {})".format(player, first_launch, second_launch))
         new_pos = player.position + first_launch + second_launch
 
         player.position = new_pos % self.n_rows  # table it's a ring buffer in this case
 
         if player.double_count == 3:
+            self._logger("{} goes to prison".format(player))
             player.position = self.prison_position
             player.turns_in_prison = 0
             player.double_count = 0
         else:
-            while first_launch == second_launch:
+            self._logger("{} goes to".format(player, self[player.position]))
+            self.positional_trigger(player)
+
+            if first_launch == second_launch:
                 player.double_count += 1
                 self.advance(player)
-
-        self.positional_trigger(player)
 
     def positional_trigger(self, player):
         cell = self[player.position]
@@ -214,6 +236,14 @@ class MonopolyBoard(Board):
             return
 
         if cell.group not in [Group.DrawChance, Group.DrawCommunityChest]:
+            # this is to be updated with all properties of the same group, houses and hotels
+            player.money -= cell.passage_cost
+
+            # if own by someone, give this money to the player who owns it
+            try:
+                cell.own_by.money += cell.passage_cost
+            except ValueError:
+                pass
             return
 
         card = self.community_chest.draw() if cell.group == Group.DrawChance else self.chance.draw()
