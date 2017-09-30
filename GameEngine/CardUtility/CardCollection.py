@@ -44,7 +44,7 @@ class Deck:
     def draw(self):
         # pop the first one
         ret = self.__cards.pop()
-        self._logger("{}: Drawn {}".format(self, ret))
+        self._logger("{}: Drawn [{}]".format(self, ret))
 
         # put it back at the end of the deck
         self.__cards.append(ret)

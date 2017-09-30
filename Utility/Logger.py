@@ -9,13 +9,13 @@ _LOG_PATHS = []
 
 
 class LogLevel(IntEnum):
-    ALWAYS = -2
+    NEVER = -2
     ERROR = -1
     WARN = 0
     INFO = 1
     DEBUG = 2
     TEST = 3
-    NEVER = 4
+    ALWAYS = 4
 
 
 class Logger:

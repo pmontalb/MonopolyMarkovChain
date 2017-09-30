@@ -42,12 +42,20 @@ class MonopolyInput(BoardGameInput):
         super(MonopolyInput, self).__init__(n_players, max_turns, "Monopoly", log_name, log_level)
 
     def make_board_input(self):
-        self.board_input = MonopolyBoardInput()
+        self.board_input = MonopolyBoardInput(self.log_name, self.log_level)
 
 
 class Monopoly(BoardGame):
     def __init__(self, game_input):
         super(Monopoly, self).__init__(game_input)
+
+        self.reset()
+
+    def reset(self):
+        self.turns = 0
+        self.board.community_chest.shuffle()
+        self.board.chance.shuffle()
+        self.make_players()
 
     def make_board(self):
         self.board = MonopolyBoard(self.game_input.board_input)

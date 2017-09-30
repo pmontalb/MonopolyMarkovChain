@@ -1,19 +1,34 @@
-from GameEngine.BoardGame.MonopolyGame.Monopoly import Monopoly, MonopolyInput
-from GameEngine.BoardGame.MonopolyGame.Monopoly import MonopolyPlayer, MonopolyPlayerInput
+from MonteCarloEngine.Simulator import Simulator, SimulatorInput
+from Utility.Logger import LogLevel
+import numpy as np
+from os import getcwd
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib import cm
+import matplotlib.pyplot as plt
+import matplotlib
+from pylab import *
 
 
-class MonopolyMarkovGenerator(Monopoly):
-    def __init__(self, board_input):
-        super(Monopoly, self).__init__(board_input)
+DATA_DIRECTORY = getcwd() + "/Data/"
 
-    def make_players(self):
-        # 1 player only
-        player_input = MonopolyPlayerInput(0, [], "Player1")
-        self.players = [MonopolyPlayer(player_input)]
+
+def surf(z, x, y):
+    fig = plt.figure()
+    ax = fig.gca(projection='3d')
+
+    # Create X and Y data
+    x_grid, y_grid = np.meshgrid(x, y)
+
+    surf = ax.plot_surface(x_grid, y_grid, z, rstride=1, cstride=1, antialiased=True)
+    plt.show()
 
 
 if __name__ == "__main__":
-    mmg_input = MonopolyInput(1, 1)
-    mmg = MonopolyMarkovGenerator(mmg_input)
+    n_simulations = 1000
+    simulator_input = SimulatorInput(n_simulations, "master", LogLevel.NEVER)
 
-    mmg.play()
+    simulator = Simulator(simulator_input)
+    simulator.run()
+    np.savetxt(DATA_DIRECTORY + "/mg_{}.csv".format(n_simulations), simulator.markov_generator, delimiter=",")
+
+    surf(simulator.markov_generator, np.arange(40), np.arange(40))
