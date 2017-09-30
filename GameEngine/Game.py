@@ -20,13 +20,14 @@ class Game(metaclass=ABCMeta):
         return "Game({} | {} / {})".format(self.game_input.game_id, self.turns, self.game_input.max_turns)
 
     def play(self):
-        self._logger("{}".format(self))
-        self._play()
+        while not self.game_over():
+            self._logger("{}".format(self))
+            self._play_turn()
 
-        self.turns += 1
+            self.turns += 1
 
     @abstractmethod
-    def _play(self):
+    def _play_turn(self):
         raise NotImplementedError()
 
     def game_over(self):

@@ -63,10 +63,9 @@ class Monopoly(BoardGame):
         # game is over if only two players are left
         return len(self.players) <= 2
 
-    def _play(self):
-        while not self.game_over():
-            for player in self.players:
-                self._logger("{} is playing".format(player))
-                self.board.advance(player)
+    def _play_turn(self):
+        for player in self.players:
+            self._logger("{} is playing".format(player))
+            self.board.advance(player)
 
-            # player can now decide to buy/sell/trade
+        # player can now decide to buy/sell/trade

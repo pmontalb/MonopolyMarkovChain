@@ -5,6 +5,10 @@ from Utility.Logger import Logger, LogLevel
 from enum import Enum
 
 
+MAX_TURN_IN_PRISON = 3
+MONEY_FROM_GO = 200
+
+
 class Group(Enum):
     Brown = 0
     Blue = 1
@@ -231,7 +235,7 @@ class MonopolyBoard(Board):
 
     def advance(self, player):
         if player.position == self.prison_position:
-            if player.turns_in_prison == 3:
+            if player.turns_in_prison == MAX_TURN_IN_PRISON:
                 self._logger("{} leaves prison".format(player))
                 player.turns_in_prison = 0
             else:
@@ -246,9 +250,11 @@ class MonopolyBoard(Board):
         new_pos = player.position + first_launch + second_launch
 
         player.position = new_pos % self.n_rows  # table it's a ring buffer in this case
+        if player.position == self.prison_position:
+            player.turns_in_prison = MAX_TURN_IN_PRISON  # fudge for not writing extra piece of logic
         if new_pos > self.n_rows:
             # collect 200
-            player.capital += 200
+            player.capital += MONEY_FROM_GO
 
         if player.double_count == 3:
             self._logger("{} goes to prison".format(player))
@@ -281,7 +287,10 @@ class MonopolyBoard(Board):
 
             # if own by someone, give this money to the player who owns it
             try:
-                cell.own_by.capital += cell.passage_cost
+                # if you are in prison you can't receive income!
+                if (cell.own_by.position != self.prison_position or
+                        cell.own_by.position == self.prison_position and cell.own_by.turns_in_prison < 3):
+                    cell.own_by.capital += cell.passage_cost
             except (ValueError, AttributeError):
                 pass
             return
