@@ -21,5 +21,5 @@ This is done calling the "make_markov_generator" method, which then saves it int
 Once this is done I plot the bar chart of the Probability Distribution Function. The result is the following:
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/pmontalb/MonopolyMarkovChains/master/Data/steadyStateProbabilities.png">
+  <img src="https://raw.githubusercontent.com/pmontalb/MonopolyMarkovChain/master/Data/steadyStateProbabilities.png">
 </p>
