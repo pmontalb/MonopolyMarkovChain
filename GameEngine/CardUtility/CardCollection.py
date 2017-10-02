@@ -38,13 +38,15 @@ class Deck:
         return "Deck({})".format(self.deck_input.deck_id)
 
     def push_back(self, deck_card):
-        self._logger("{}: Added {}".format(self, deck_card), log_level=LogLevel.TEST)
+        if self._logger.log_level >= LogLevel.TEST:
+            self._logger("{}: Added {}".format(self, deck_card), log_level=LogLevel.TEST)
         self.__cards.append(deck_card)
 
     def draw(self):
         # pop the first one
         ret = self.__cards.pop()
-        self._logger("{}: Drawn [{}]".format(self, ret))
+        if self._logger.log_level >= LogLevel.TEST:
+            self._logger("{}: Drawn [{}]".format(self, ret), log_level=LogLevel.TEST)
 
         # put it back at the end of the deck
         self.__cards.append(ret)
@@ -52,5 +54,6 @@ class Deck:
         return ret
 
     def shuffle(self):
-        self._logger("{}: Shuffling".format(self))
+        if self._logger.log_level >= LogLevel.TEST:
+            self._logger("{}: Shuffling".format(self), log_level=LogLevel.TEST)
         shuffle(self.__cards)

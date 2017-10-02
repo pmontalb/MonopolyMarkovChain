@@ -73,7 +73,8 @@ class Monopoly(BoardGame):
 
     def _play_turn(self):
         for player in self.players:
-            self._logger("{} is playing".format(player))
+            if self._logger.log_level >= LogLevel.DEBUG:
+                self._logger("{} is playing".format(player), log_level=LogLevel.DEBUG)
             self.board.advance(player)
 
         # player can now decide to buy/sell/trade

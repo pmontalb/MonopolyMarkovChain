@@ -21,7 +21,8 @@ class Game(metaclass=ABCMeta):
 
     def play(self):
         while not self.game_over():
-            self._logger("{}".format(self), log_level=LogLevel.DEBUG)
+            if self._logger.log_level >= LogLevel.DEBUG:
+                self._logger("{}".format(self), log_level=LogLevel.DEBUG)
             self._play_turn()
 
             self.turns += 1

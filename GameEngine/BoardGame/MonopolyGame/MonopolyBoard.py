@@ -152,9 +152,14 @@ class MonopolyBoard(Board):
     def prison_position(self):
         return 10
 
+    @property
+    def go_to_prison(self):
+        return 30
+
     def __append_board_item(self, board_item_input):
         item = MonopolyBoardItem(board_item_input)
-        self._logger("{}: #{} Added {}".format(self, len(self._table), item), log_level=LogLevel.TEST)
+        if self._logger.log_level >= LogLevel.TEST:
+            self._logger("{}: #{} Added {}".format(self, len(self._table), item), log_level=LogLevel.TEST)
         self._table.append(item)
 
     def _make_board(self):
@@ -254,17 +259,20 @@ class MonopolyBoard(Board):
     def advance(self, player):
         if player.position == self.prison_position:
             if player.turns_in_prison == MAX_TURN_IN_PRISON:
-                #self._logger("{} leaves prison".format(player), log_level=LogLevel.DEBUG)
+                if self._logger.log_level >= LogLevel.DEBUG:
+                    self._logger("{} leaves prison".format(player), log_level=LogLevel.DEBUG)
                 player.turns_in_prison = 0
             else:
                 # if in prison, it cannot move for 3 turns
                 player.turns_in_prison += 1
-                #self._logger("{} remains in prison".format(player), log_level=LogLevel.DEBUG)
+                if self._logger.log_level >= LogLevel.DEBUG:
+                    self._logger("{} remains in prison".format(player), log_level=LogLevel.DEBUG)
                 return
 
         first_launch = self.dice.launch()
         second_launch = self.dice.launch()
-        #self._logger("{} dice launch({} | {})".format(player, first_launch, second_launch), log_level=LogLevel.DEBUG)
+        if self._logger.log_level >= LogLevel.DEBUG:
+            self._logger("{} dice launch({} | {})".format(player, first_launch, second_launch), log_level=LogLevel.DEBUG)
         new_pos = player.position + first_launch + second_launch
 
         player.position = new_pos % self.n_rows  # table it's a ring buffer in this case
@@ -275,25 +283,28 @@ class MonopolyBoard(Board):
             player.capital += MONEY_FROM_GO
 
         if player.double_count == MAX_DOUBLE_COUNT:
-            #self._logger("{} goes to prison".format(player), log_level=LogLevel.DEBUG)
+            if self._logger.log_level >= LogLevel.DEBUG:
+                self._logger("{} goes to prison".format(player), log_level=LogLevel.DEBUG)
             player.position = self.prison_position
             player.turns_in_prison = 0
             player.double_count = 0
         else:
-            #self._logger("{} goes to {}".format(player, self[player.position]), log_level=LogLevel.DEBUG)
+            if self._logger.log_level >= LogLevel.DEBUG:
+                self._logger("{} goes to {}".format(player, self[player.position]), log_level=LogLevel.DEBUG)
             self.positional_trigger(player)
 
             if first_launch == second_launch:
                 player.double_count += 1
                 self.advance(player)
 
-    def positional_trigger(self, player):
-        cell = self[player.position]
-
+    def __check_go_to_prison(self, cell, player):
         if cell.group == Group.GoToPrison:
             player.position = self.prison_position
             player.turns_in_prison = 0
-            return
+
+    def positional_trigger(self, player):
+        cell = self[player.position]
+        self.__check_go_to_prison(cell, player)
 
         if cell.group not in [Group.DrawChance, Group.DrawCommunityChest]:
             # deduct any passage cost (i.e. tax, property own by other players, etc.)
@@ -322,6 +333,14 @@ class MonopolyBoard(Board):
                 player.capital += MONEY_FROM_GO
             return
 
+        if player.position == self.go_to_prison:
+            raise ValueError("This state is impossible to reach!")
+
         player.position = (player.position + card.pos_shift) % self.n_rows
+        self.__check_go_to_prison(self[player.position], player)
+
+        if player.position == self.go_to_prison:
+            raise ValueError("")
+
         player.capital += card.capital_change
         player.leave_prison_tickets += card.leave_prison

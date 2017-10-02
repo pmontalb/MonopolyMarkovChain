@@ -38,6 +38,8 @@ class MonopolyMarkovGenerator(Monopoly):
 
     def _play_turn(self):
         self.board.advance(self.players[0])
+        if self.players[0].position == self.board.go_to_prison:
+            raise ValueError("")
         self.markov_generator[self.initial_position, self.players[0].position] += 1
 
 
@@ -71,7 +73,11 @@ class Simulator:
 
     def run(self):
         for initial_position in range(self.monopoly_engine.board.n_rows):
-            print(initial_position)
+            if initial_position == self.monopoly_engine.board.go_to_prison:
+                print("Skipping Go To Prison")
+                continue
+            print("Working on position {}".format(initial_position))
+
             self.monopoly_engine.game_input.initial_position = initial_position
 
             if not self.multiprocess:
